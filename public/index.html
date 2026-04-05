@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SimpleChat Premium</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dark-theme.css">
+    <!-- Add Font Awesome for icons if needed -->
+</head>
+<body>
+    <div class="chat-app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">SimpleChat</div>
+                <div class="user-info">
+                    <div id="user-avatar-sidebar" class="avatar"></div>
+                    <span id="username-sidebar"></span>
+                </div>
+            </div>
+            <nav class="rooms-nav">
+                <h3>Rooms</h3>
+                <ul id="room-list">
+                    <!-- Official room will be added here -->
+                </ul>
+            </nav>
+            <div class="users-online">
+                <h3 id="current-room-name"></h3>
+                <ul id="user-list">
+                    <!-- Users online in the current room will be listed here -->
+                </ul>
+            </div>
+            <button id="toggle-theme-btn" class="theme-toggle-button">
+                🌙 Dark Mode
+            </button>
+        </aside>
+
+        <main class="chat-window">
+            <div id="chat-messages" class="messages-container">
+                <!-- Messages will be appended here -->
+            </div>
+
+            <div id="typing-indicator" class="typing-indicator"></div>
+
+            <div class="message-input-area">
+                <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
+                <button id="send-button">Send</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Pre-login Modal -->
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <h2>Welcome to SimpleChat</h2>
+            <img src="/images/logo-premium.png" alt="Logo" class="modal-logo"> <!-- Assume you have a logo -->
+            <input type="text" id="username-input" placeholder="Enter your username">
+            <button id="login-button">Join Chat</button>
+            <p id="login-error" class="error-message"></p>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
