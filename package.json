@@ -1,0 +1,19 @@
+{
+  "name": "ultra-premium-chat",
+  "version": "1.0.0",
+  "description": "An ultra-premium real-time chat web application",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "uniqid": "^5.4.0",
+    "xss-clean": "^0.1.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
