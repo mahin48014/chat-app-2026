@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="stylesheet" href="css/admin.css"> <!-- Separate CSS for admin -->
+    <style>
+        /* Basic styling for simplicity (can be moved to admin.css) */
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; }
+        h1 { color: #333; }
+        #admin-status { margin-bottom: 20px; padding: 10px; background-color: #e9ecef; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        th, td { padding: 12px 15px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: #e9ecef; font-weight: 600; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+        button { background-color: #007bff; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
+        button:hover { background-color: #0056b3; }
+        .ban-button { background-color: #dc3545; }
+        .ban-button:hover { background-color: #c82333; }
+    </style>
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+    <div id="admin-status">Status: Connecting...</div>
+
+    <section>
+        <h2>Active Users</h2>
+        <div id="user-count">0</div>
+        <table id="users-table">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>ID</th>
+                    <th>Room</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- User data will be loaded here -->
+            </tbody>
+        </table>
+    </section>
+
+    <section>
+        <h2>Chat Rooms</h2>
+        <div id="room-count">0</div>
+        <table id="rooms-table">
+            <thead>
+                <tr>
+                    <th>Room Name</th>
+                    <th>ID</th>
+                    <th>Official</th>
+                    <th>Active Users</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Room data will be loaded here -->
+            </tbody>
+        </table>
+    </section>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io(); // Connect to the same server
+        const adminStatusDiv = document.getElementById('admin-status');
+        const usersTableBody = document.getElementById('users-table').querySelector('tbody');
+        const roomsTableBody = document.getElementById('rooms-table').querySelector('tbody');
+        const userCountDiv = document.getElementById('user-count');
+        const roomCountDiv = document.getElementById('room-count');
+
+        let isAdmin = false;
+        const ADMIN_PASSWORD = 'system480'; // Matches server configuration
+
+        // --- Authentication Handling (Minimal) ---
+        // In a real app, this would be more robust, like a dedicated admin login page
+        // or a protected route that sets an admin flag.
+        // For now, we'll assume the user entered '/admin' and will try to authenticate.
+
+        socket.on('connect', () => {
+            adminStatusDiv.textContent = 'Status: Connected. Authenticating...';
+            // Simulate a password check. In a real scenario, the admin page might need
+            // its own authentication mechanism or a password prompt before connecting.
+            // For this direct connection, we'll ask for password via prompt if not yet authenticated.
+            if (!isAdmin) {
+                const password = prompt('Enter admin password:');
+                if (password === ADMIN_PASSWORD) {
+                    isAdmin = true;
+                    adminStatusDiv.textContent = 'Status: Authenticated as Admin.';
+                    socket.emit('adminLogin', password, (err, msg) => {
+                        if (err) {
+                            adminStatusDiv.textContent = `Status: Authentication Failed - ${err}`;
+                            isAdmin = false;
+                        } else {
+                             console.log(msg); // e.g. "Admin access granted."
+                            // Fetch initial data
+                            requestAdminData();
+                        }
+                    });
+                } else {
+                    adminStatusDiv.textContent = 'Status: Authentication failed. Invalid password.';
+                    setTimeout(() => {
+                        window.location.href = '/'; // Redirect if not admin
+                    }, 2000);
+                }
+            } else {
+                 adminStatusDiv.textContent = 'Status: Authenticated as Admin.';
+                 requestAdminData(); // Re-fetch data if already authenticated and reconnected
+            }
+        });
+
+        function requestAdminData() {
+            if (!isAdmin) return;
+            socket.emit('getUsers', (err, users) => {
+                if (err) {
+                    console.error('Error fetching users:', err);
+                    adminStatusDiv.textContent = `Error fetching users: ${err}`;
+                } else {
+                    renderUsers(users);
+                }
+            });
+            socket.emit('getRooms', (err, rooms) => {
+                if (err) {
+                    console.error('Error fetching rooms:', err);
+                    adminStatusDiv.textContent = `Error fetching rooms: ${err}`;
+                } else {
+                    renderRooms(rooms);
+                }
+            });
+        }
+
+
+        function renderUsers(users) {
+            userCountDiv.textContent = users.length.toString();
+            usersTableBody.innerHTML = '';
+            users.forEach(user => {
+                const row = usersTableBody.insertRow();
+                row.insertCell(0).textContent = user.username;
+                row.insertCell(1).textContent = user.id;
+                row.insertCell(2).textContent = user.room || 'N/A';
+
+                const actionsCell = row.insertCell(3);
+                const banButton = document.createElement('button');
+                banButton.textContent = 'Ban/Kick';
+                banButton.classList.add('ban-button');
+                banButton.onclick = () => {
+                    if (confirm(`Are you sure you want to ban/kick ${user.username}?`)) {
+                        socket.emit('banUser', user.id, (err, msg) => {
+                            if (err) {
+                                console.error('Ban/Kick failed:', err);
+                                alert(`Failed to ban/kick ${user.username}: ${err}`);
+                            } else {
+                                alert(`${user.username} has been banned/kicked.`);
+                                // Re-fetch data to reflect changes
+                                requestAdminData();
+                            }
+                        });
+                    }
+                };
+                actionsCell.appendChild(banButton);
+            });
+        }
+
+        function renderRooms(rooms) {
+            roomCountDiv.textContent = rooms.length.toString();
+            roomsTableBody.innerHTML = '';
+            rooms.forEach(room => {
+                const row = roomsTableBody.insertRow();
+                row.insertCell(0).textContent = room.name;
+                row.insertCell(1).textContent = room.id;
+                row.insertCell(2).textContent = room.isOfficial ? 'Yes' : 'No';
+                row.insertCell(3).textContent = room.activeUsers;
+            });
+        }
+
+        socket.on('disconnect', () => {
+            adminStatusDiv.textContent = 'Status: Disconnected.';
+            isAdmin = false;
+            // You might want to clear tables or show a message
+        });
+
+        // --- Re-request data periodically or on specific events if needed ---
+        // setInterval(requestAdminData, 10000); // Fetch every 10 seconds
+    </script>
+</body>
+</html>
